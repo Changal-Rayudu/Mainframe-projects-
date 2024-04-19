@@ -1,0 +1,181 @@
+
+      *This is the sixth file in sequence
+       IDENTIFICATION DIVISION.                                         00010000
+       PROGRAM-ID. BULKVLD.                                             00020003
+       ENVIRONMENT DIVISION.                                            00030000
+       INPUT-OUTPUT SECTION.                                            00040000
+       FILE-CONTROL.                                                    00041003
+      * BULK PS                                                         00042006
+           SELECT TI001-PS ASSIGN TO BULKIN                             00050000
+           ORGANIZATION IS SEQUENTIAL                                   00060000
+           ACCESS       IS SEQUENTIAL                                   00070000
+           FILE STATUS  IS WS-FST-TI001.                                00080000
+      * BULK VALID PS                                                   00090006
+           SELECT TO001-PS ASSIGN TO BULKOUT                            00100000
+           ACCESS       IS SEQUENTIAL                                   00110000
+           ORGANIZATION IS SEQUENTIAL                                   00120000
+           FILE STATUS  IS WS-FST-TO001.                                00130000
+      * ERROR PS                                                        00140006
+           SELECT TO002-PS ASSIGN TO ERROUT                             00150000
+           ORGANIZATION IS SEQUENTIAL                                   00160000
+           ACCESS       IS SEQUENTIAL                                   00170000
+           FILE STATUS  IS WS-FST-TO002.                                00180000
+       DATA DIVISION.                                                   00190000
+       FILE SECTION.                                                    00201000
+      *BULK PS LAYOUT                                                   00201106
+       FD TI001-PS                                                      00202000
+           RECORDING MODE IS F                                          00210000
+           RECORD CONTAINS 80 CHARACTERS.                               00220000
+       01 TI001-PS-REC.                                                 00230000
+           05 TI001-COLLECT  PIC X(10).                                 00240000
+           05 FILLER         PIC X(01).                                 00250000
+           05 TI001-APP-ID   PIC X(10).                                 00260000
+           05 FILLER         PIC X(01).                                 00270000
+           05 TI001-LOAN-ID  PIC X(02).                                 00280000
+           05 FILLER         PIC X(01).                                 00290000
+           05 TI001-AMT-PAID PIC 9(07)V9(02).                           00300005
+           05 FILLER         PIC X(01).                                 00310000
+           05 TI001-AMT-PAID-DATE PIC X(10).                            00320005
+      * BULK VALID PS LAYOUT                                            00321006
+       FD TO001-PS                                                      00330000
+           RECORDING MODE IS F                                          00340000
+           RECORD CONTAINS 80 CHARACTERS.                               00350000
+       01 TO001-PS-REC.                                                 00360000
+           05 TO001-COLLECT  PIC X(10).                                 00370000
+           05 FILLER         PIC X(01).                                 00380000
+           05 TO001-APP-ID   PIC X(10).                                 00390000
+           05 FILLER         PIC X(01).                                 00400000
+           05 TO001-LOAN-ID  PIC X(02).                                 00410000
+           05 FILLER         PIC X(01).                                 00420000
+           05 TO001-AMT-PAID PIC 9(07)V9(02).                           00430001
+           05 FILLER         PIC X(01).                                 00440000
+           05 TO001-AMT-PAID-DATE PIC X(10).                            00450005
+      * BULK ERROR PS LAYOUT                                            00451006
+       FD TO002-PS                                                      00460000
+           RECORDING MODE IS F                                          00470000
+           RECORD CONTAINS 80 CHARACTERS.                               00480000
+       01 TO002-PS-REC.                                                 00490000
+           05 TO002-COLLECT  PIC X(10).                                 00500000
+           05 FILLER         PIC X(01).                                 00510000
+           05 TO002-APP-ID   PIC X(10).                                 00520000
+           05 FILLER         PIC X(01).                                 00530000
+           05 TO002-LOAN-ID  PIC X(02).                                 00540000
+           05 FILLER         PIC X(01).                                 00550000
+           05 TO002-AMT-PAID PIC 9(07)V9(02).                           00560001
+           05 FILLER         PIC X(01).                                 00570000
+           05 TO002-AMT-PAID-DATE PIC X(10).                            00580005
+       WORKING-STORAGE SECTION.                                         00590000
+      *FILE STATUS CODE                                                 00591006
+       01 WS-FILE-STATUS.                                               00600000
+           05 WS-FST-TI001   PIC 9(02).                                 00610000
+              88 C05-TI001-SUCCESS VALUE ZEROES.                        00620000
+              88 C05-TI001-EOF     VALUE 10.                            00630000
+           05 WS-FST-TO001   PIC 9(02).                                 00640000
+              88 C05-TO001-SUCCESS VALUE ZEROES.                        00650000
+              88 C05-TO001-EOF     VALUE 10.                            00660000
+           05 WS-FST-TO002   PIC 9(02).                                 00670000
+              88 C05-TO002-SUCCESS VALUE ZEROES.                        00680000
+              88 C05-TO002-EOF     VALUE 10.                            00690000
+           05 WS-COUNTER     PIC 9(02) VALUE ZEROES.                    00691001
+       PROCEDURE DIVISION.                                              00700000
+       0000-MAIN-PARA.                                                  00710000
+           PERFORM 1000-INIT-PARA THROUGH 1000-INIT-PARA-EXIT.          00720000
+           PERFORM 3000-PROC-PARA THROUGH 3000-PROC-PARA-EXIT.          00730000
+           PERFORM 9000-TERM-PARA THROUGH 9000-TERM-PARA-EXIT.          00740000
+       0000-MAIN-PARA-EXIT.                                             00750000
+           EXIT.                                                        00760000
+       1000-INIT-PARA.                                                  00770000
+           DISPLAY 'INITIALIZATION PARA'.                               00780000
+       1000-INIT-PARA-EXIT.                                             00790000
+           EXIT.                                                        00800000
+       3000-PROC-PARA.                                                  00810000
+           PERFORM 3100-OPEN-PARA THROUGH 3100-OPEN-PARA-EXIT           00820000
+           PERFORM 3200-READ-PARA THROUGH 3200-READ-PARA-EXIT           00830000
+           UNTIL C05-TI001-EOF                                          00840000
+           PERFORM 3300-CLOSE-PARA THROUGH 3300-CLOSE-PARA-EXIT.        00850000
+       3000-PROC-PARA-EXIT.                                             00860000
+           EXIT.                                                        00870000
+       3100-OPEN-PARA.                                                  00880000
+      *OPENING BULK PS                                                  00881006
+           OPEN INPUT TI001-PS                                          00890000
+           EVALUATE TRUE                                                00900000
+           WHEN C05-TI001-SUCCESS                                       00910000
+                DISPLAY 'TI001-PS OPENED SUCESSFULLY'                   00920000
+           WHEN OTHER                                                   00930000
+                DISPLAY 'TI001-PS OPEN FAILED ' WS-FST-TI001            00940000
+           END-EVALUATE                                                 00950000
+      * OPENING BULK VALID PS                                           00950106
+           OPEN OUTPUT TO001-PS                                         00951001
+           EVALUATE TRUE                                                00960001
+           WHEN C05-TO001-SUCCESS                                       00961001
+                DISPLAY 'TO001-PS OPENED SUCESSFULLY'                   00962001
+           WHEN OTHER                                                   00963001
+                DISPLAY 'TO001-PS OPEN FAILED' WS-FST-TO001             00964001
+           END-EVALUATE                                                 00965001
+      * OPENING ERROR PS                                                00965106
+           OPEN OUTPUT TO002-PS                                         00965201
+           EVALUATE TRUE                                                00966001
+           WHEN C05-TO002-SUCCESS                                       00967001
+                 DISPLAY 'TO002-PS OPENED SUCCESSFULLY'                 00970001
+           WHEN OTHER                                                   00971001
+                 DISPLAY 'TO002-PS OPEN FAILED' WS-FST-TO002            00972001
+           END-EVALUATE                                                 00973001
+           .                                                            00974004
+       3100-OPEN-PARA-EXIT.                                             00975001
+           EXIT.                                                        00976001
+       3200-READ-PARA.                                                  00977001
+           MOVE SPACES TO TI001-PS-REC TO001-PS-REC TO002-PS-REC        00978001
+      * READING BULK PS                                                 00978106
+           READ TI001-PS                                                00979001
+           EVALUATE TRUE                                                00980001
+           WHEN C05-TI001-SUCCESS                                       00990001
+                ADD 1 TO WS-COUNTER                                     01000001
+                PERFORM 3400-VALID-PARA THRU 3400-VALID-PARA-EXIT       01010001
+           WHEN C05-TI001-EOF                                           01020001
+                DISPLAY 'ALL RECORDS ARE PROCESSED :' WS-COUNTER        01030001
+           WHEN OTHER                                                   01040001
+                DISPLAY 'FILE READ FAILED'                              01050001
+           END-EVALUATE                                                 01060002
+           .                                                            01061002
+       3200-READ-PARA-EXIT.                                             01070002
+           EXIT.                                                        01080002
+       3400-VALID-PARA.                                                 01090002
+      *VALIDATING  THE RECORDS                                          01091006
+           IF TI001-COLLECT IS ALPHABETIC AND                           01100002
+              TI001-APP-ID  IS NUMERIC    AND                           01110002
+              TI001-LOAN-ID IS NUMERIC    AND                           01120002
+              TI001-AMT-PAID IS NUMERIC   AND                           01130002
+              (TI001-AMT-PAID-DATE(1:4) IS NUMERIC AND                  01140002
+               TI001-AMT-PAID-DATE(5:1) = '-' AND                       01150002
+               TI001-AMT-PAID-DATE(6:2) IS NUMERIC AND                  01160002
+               TI001-AMT-PAID-DATE(8:1) = '-' AND                       01170002
+               TI001-AMT-PAID-DATE(9:2) IS NUMERIC)                     01180002
+              PERFORM 3410-VWRITE-PARA THRU 3410-VWRITE-PARA-EXIT       01190002
+           ELSE                                                         01200002
+              PERFORM 3420-EWRITE-PARA THRU 3420-EWRITE-PARA-EXIT       01210002
+           END-IF.                                                      01220002
+       3400-VALID-PARA-EXIT.                                            01230002
+           EXIT.                                                        01240002
+       3410-VWRITE-PARA.                                                01250002
+      * WRITING VALID RECOORDS INTO VALID PS                            01251006
+           MOVE TI001-PS-REC TO TO001-PS-REC                            01260002
+           WRITE TO001-PS-REC                                           01270002
+           .                                                            01280002
+       3410-VWRITE-PARA-EXIT.                                           01290002
+           EXIT.                                                        01300002
+       3420-EWRITE-PARA.                                                01310002
+      * WRITING ERROR RECORDS INTO ERROR PS                             01311006
+           MOVE TI001-PS-REC TO TO002-PS-REC                            01320002
+           WRITE TO002-PS-REC.                                          01330002
+       3420-EWRITE-PARA-EXIT.                                           01350002
+           EXIT.                                                        01360002
+       3300-CLOSE-PARA.                                                 01370002
+      *CLOSING  FILES                                                   01371006
+           CLOSE TI001-PS TO001-PS TO002-PS.                            01380002
+       3300-CLOSE-PARA-EXIT.                                            01390002
+           EXIT.                                                        01400002
+       9000-TERM-PARA.                                                  01410002
+           STOP RUN.                                                    01420002
+       9000-TERM-PARA-EXIT.                                             01430002
+           EXIT.                                                        01440002
+

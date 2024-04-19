@@ -1,0 +1,135 @@
+      *This is the Nineth file in sequence
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LOADVSAM.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      * DECLARATION OF VSAM FILE
+           SELECT TO001-KS ASSIGN TO MASTERKS
+           ORGANIZATION IS INDEXED
+           ACCESS MODE IS SEQUENTIAL
+           RECORD KEY IS TO001-APPLICANT-ID
+           FILE STATUS IS WS-FST-TO001.
+       DATA DIVISION.
+       FILE SECTION.
+       FD TO001-KS.
+       01 TO001-KS-REC.
+           05 TO001-APPLICANT-ID      PIC X(10).
+           05 FILLER                  PIC X(01).
+           05 TO001-LOAN-ID           PIC X(02).
+           05 FILLER                  PIC X(01).
+           05 TO001-AMOUNT-PAID       PIC 9(7)V9(2).
+           05 FILLER                  PIC X(01).
+           05 TO001-AMOUNT-PAID-DATE  PIC X(10).
+           05 FILLER                  PIC X(46).
+       WORKING-STORAGE SECTION.
+       01 WS-VARS.
+           05 WS-FST-TO001            PIC 9(02).
+               88 TO001-SUCCESS       VALUE ZEROES.
+               88 TO001-EOF           VALUE 10.
+           05 WS-COUNTER              PIC 9(02) VALUE ZEROES.
+           05 WS-MASTER.
+               10 WS-APPLICANT-ID         PIC X(10).
+               10 WS-LOAN-ID              PIC X(02).
+           05 WS-ERR-MSG.
+               10  WS-ERR-LEN     PIC S9(04) COMP VALUE 800.
+               10  WS-ERR-TXT     PIC X(80)  OCCURS 10 TIMES.
+           05  WS-LRECL           PIC S9(09) COMP VALUE 80.
+           EXEC SQL INCLUDE SQLCA END-EXEC.
+           EXEC SQL INCLUDE LOANDCL END-EXEC.
+           EXEC SQL INCLUDE PAYDCL END-EXEC.
+      * DECLARATION OF CURSOR
+           EXEC SQL
+           DECLARE MASTER CURSOR FOR
+           SELECT PAYMENT_DB.APPLICANT_ID,PAYMENT_DB.LOAN_ID,
+                  AMOUNT_PAID,AMOUNT_PAID_DATE
+           FROM PAYMENT_DB JOIN LOAN_DB
+           ON PAYMENT_DB.APPLICANT_ID = LOAN_DB.APPLICANT_ID
+           WHERE LOAN_DB.LOAN_INDICATOR = 'OPEN'
+           END-EXEC.
+       PROCEDURE DIVISION.
+       0000-MAIN-PARA.
+           PERFORM 1000-INIT-PARA THRU 1000-INIT-PARA-EXIT
+           PERFORM 3000-PROC-PARA THRU 3000-PROC-PARA-EXIT
+           PERFORM 9000-TERM-PARA THRU 9000-TERM-PARA-EXIT
+           .
+       0000-MAIN-PARA-EXIT.
+           EXIT.
+       1000-INIT-PARA.
+           DISPLAY 'INITIALIZATION PARA'.
+       1000-INIT-PARA-EXIT.
+           EXIT.
+       3000-PROC-PARA.
+           PERFORM 3100-OPEN-PARA THRU 3100-OPEN-PARA-EXIT
+           PERFORM 3300-FETCH-PARA THRU 3300-FETCH-PARA-EXIT
+                                   UNTIL SQLCODE = 100
+           PERFORM 3900-CLOSE-PARA THRU 3900-CLOSE-PARA-EXIT
+           .
+       3000-PROC-PARA-EXIT.
+           EXIT.
+       9000-TERM-PARA.
+           STOP RUN.
+       9000-TERM-PARA-EXIT.
+           EXIT.
+       3100-OPEN-PARA.
+           OPEN OUTPUT TO001-KS
+           EVALUATE TRUE
+           WHEN TO001-SUCCESS
+               DISPLAY 'TO001 OPEN SUCCESS'
+           WHEN OTHER
+               DISPLAY 'TO001 OPEN FAILED ' WS-FST-TO001
+           END-EVALUATE.
+           EXEC SQL OPEN MASTER END-EXEC
+           EVALUATE TRUE
+           WHEN SQLCODE = 000
+               DISPLAY 'CURSOR OPENED'
+           WHEN OTHER
+               CALL 'DSNTIAR' USING SQLCA WS-ERR-MSG WS-LRECL
+               DISPLAY WS-ERR-MSG
+           END-EVALUATE
+           .
+       3100-OPEN-PARA-EXIT.
+           EXIT.
+       3300-FETCH-PARA.
+      * FETCHING VALUES INTO HV
+           EXEC SQL
+           FETCH MASTER INTO :WS-APPLICANT-ID,:WS-LOAN-ID,
+           :HV-AMOUNT-PAID,:HV-AMOUNT-PAID-DATE
+           END-EXEC
+           EVALUATE TRUE
+           WHEN SQLCODE = 000
+               ADD 1 TO WS-COUNTER
+               PERFORM 3400-INSERT-PARA THRU 3400-INSERT-PARA-EXIT
+           WHEN SQLCODE = 100
+               DISPLAY 'ALL RECORDS FETCHED'
+               DISPLAY 'NO. OF RECORDS ARE: ' WS-COUNTER
+           WHEN OTHER
+               CALL 'DSNTIAR' USING SQLCA WS-ERR-MSG WS-LRECL
+               DISPLAY WS-ERR-MSG
+           END-EVALUATE
+           .
+       3300-FETCH-PARA-EXIT.
+           EXIT.
+       3900-CLOSE-PARA.
+           CLOSE TO001-KS
+           EXEC SQL CLOSE MASTER END-EXEC
+           .
+       3900-CLOSE-PARA-EXIT.
+           EXIT.
+       3400-INSERT-PARA.
+           MOVE SPACES TO TO001-KS-REC
+           MOVE WS-APPLICANT-ID TO TO001-APPLICANT-ID
+           MOVE WS-LOAN-ID TO TO001-LOAN-ID
+           MOVE HV-AMOUNT-PAID TO TO001-AMOUNT-PAID
+           MOVE HV-AMOUNT-PAID-DATE TO TO001-AMOUNT-PAID-DATE
+           WRITE TO001-KS-REC
+           EVALUATE TRUE
+           WHEN TO001-SUCCESS
+               DISPLAY 'RECORD INSERTED'
+           WHEN OTHER
+               DISPLAY 'RECORD WRITE FAILED' WS-FST-TO001
+           END-EVALUATE
+           .
+       3400-INSERT-PARA-EXIT.
+           EXIT.
+

@@ -1,0 +1,44 @@
+--This is the first file in the sequence
+--DROP TABLE LOAN_DB;                                                   00001011
+--DROP TABLE PAYMENT_DB;                                                00002009
+--CREATE TABLE LOAN_DB                                                  00010012
+--(                                                                     00020012
+--  APPLICANT_ID CHAR(10) NOT NULL PRIMARY KEY                          00030012
+--  ,LOAN_ID CHAR(02)                                                   00040012
+--  ,LOAN_TYPE CHAR(10) CHECK(LOAN_TYPE IN('HOUSING','EDUCATION',       00050012
+--    'PERSONAL','AGRICUL','BUSINESS'))                                 00051012
+--  ,APPROVED_LOAN_AMOUNT NUMERIC(08)                                   00060012
+--  ,LOAN_APPROVAL_DATE DATE                                            00070012
+--  ,LOAN_TENURE CHAR(02)                                               00080012
+--  ,FIXED_INTREST_RATE DECIMAL(3,1)                                    00090012
+--  ,LOAN_INDICATOR CHAR(05)                                            00100012
+--  ,REPAYMENT_DAY CHAR(02)                                             00110012
+--  ,TOTAL_REPAYMENT_AMOUNT NUMERIC(09)                                 00120012
+--  ,MONTHLY_REPAYMENT_AMOUNT DECIMAL(9,2)                              00130012
+--  ,NEXT_REPAYMENT_DUE_DATE DATE                                       00140012
+--  ,BALANCE_AMOUNT INTEGER                                             00150012
+--  )IN SHRDB4.SHRTS4;                                                  00160012
+--CREATE UNIQUE INDEX  APPID20 ON LOAN_DB(APPLICANT_ID);                00170012
+--CREATE TABLE PAYMENT_DB                                               00180010
+--(                                                                     00190010
+--APPLICANT_ID CHAR(10) NOT NULL PRIMARY KEY                            00200010
+--,LOAN_ID CHAR(10) NOT NULL                                            00210010
+--,AMOUNT_PAID DECIMAL(9,2)                                             00220010
+-- , AMOUNT_PAID_DATE DATE                                              00230010
+-- ,PREVIOUS_BALANCE_AMOUNT INTEGER                                     00240010
+-- ,CURRENT_BALANCE_AMOUNT INTEGER                                      00250010
+-- ,COLLECTION CHAR(10)                                                 00260010
+-- )IN SHRDB4.SHRTS4;                                                   00270010
+--CREATE UNIQUE INDEX APPID30 ON                                        00280010
+--PAYMENT_DB(APPLICANT_ID);                                             00290010
+  CREATE TABLE APPLICANT_DB(                                            00300012
+  APPLICANT_ID CHAR(10) NOT NULL PRIMARY KEY                            00310012
+  ,APPLICANT_NAME VARCHAR(32)                                           00320012
+  ,DOOR_NO CHAR(10)                                                     00330012
+  ,STREET CHAR(20)                                                      00340012
+  ,CITY CHAR(20)                                                        00350012
+  ,STATE CHAR(20)                                                       00360012
+  ,PIN NUMERIC(06)                                                      00370012
+  ,CELL_PHONE_NO CHAR(10)) IN SHRDB4.SHRTS4;                            00380012
+  CREATE UNIQUE INDEX APP1 ON APPLICANT_DB(APPLICANT_ID);               00390012
+

@@ -1,0 +1,25 @@
+//*This is the third file in the sequence
+//TECN121A JOB NOTIFY=&SYSUID                                           00010000
+//STEP01   EXEC PGM=SORT                                                00020000
+//SYSOUT   DD SYSOUT=*                                                  00021000
+//SYSPRINT DD SYSOUT=*                                                  00022000
+//SORTIN   DD DSN=TECN121.FINAL.PAYMENT.DETAIL.PS,DISP=SHR              00030001
+//SORTOF1  DD DSN=TECN121.FINAL.BACKUP.MAXRET.GDG(+1),                  00040001
+//            DISP=(NEW,CATLG,DELETE),VOLUME=SER=ZAPRD7,                00050001
+//            SPACE=(TRK,(5,5)),                                        00060000
+//            DCB=(LRECL=80,BLKSIZE=800,RECFM=FB,DSORG=PS)              00070000
+//SORTOF2  DD DSN=TECN121.FINAL.BACKUP.GENUINE.GDG(+1),                 00080001
+//            DISP=(NEW,CATLG,DELETE),VOLUME=SER=ZAPRD7,                00090001
+//            SPACE=(TRK,(5,5)),                                        00100000
+//            DCB=(LRECL=80,BLKSIZE=800,RECFM=FB,DSORG=PS)              00110000
+//SORTOF3  DD DSN=TECN121.FINAL.BACKUP.HIGHSPD.GDG(+1),                 00120002
+//            DISP=(NEW,CATLG,DELETE),VOLUME=SER=ZAPRD7,                00130002
+//            SPACE=(TRK,(5,5)),                                        00140000
+//            DCB=(LRECL=80,RECFM=FB,BLKSIZE=800,DSORG=PS)              00150000
+//SYSIN    DD *                                                         00160000
+  SORT FIELDS=COPY                                                      00170000
+  OUTFIL FILES=1,INCLUDE=(1,10,CH,EQ,C'MAXRETURN')                      00180000
+  OUTFIL FILES=2,INCLUDE=(1,10,CH,EQ,C'GENUINE')                        00190000
+  OUTFIL FILES=3,INCLUDE=(1,10,CH,EQ,C'HIGHSPEED')                      00200000
+/*                                                                      00210000
+

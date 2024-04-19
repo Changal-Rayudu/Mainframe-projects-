@@ -1,0 +1,153 @@
+      *This is the nineth file in sequence
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LOADLOAN.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT TI001-PS ASSIGN TO LOANDB
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS IS SEQUENTIAL
+           FILE STATUS IS WS-FST-TI001.
+       DATA DIVISION.
+       FILE SECTION.
+       FD TI001-PS
+           RECORDING MODE IS F
+           RECORD CONTAINS 200 CHARACTERS.
+       01 TI001-PS-REC.
+           05 TI001-APPLICANT-ID         PIC X(10).
+           05 FILLER                     PIC X(01).
+           05 TI001-LOAN-ID              PIC X(02).
+           05 FILLER                     PIC X(01).
+           05 TI001-LOAN-TYPE            PIC X(07).
+           05 FILLER                     PIC X(01).
+           05 TI001-APPROVED-LOAN-AMOUNT PIC 9(08).
+           05 FILLER                     PIC X(01).
+           05 TI001-LOAN-APPROVAL-DATE   PIC X(10).
+           05 FILLER                     PIC X(01).
+           05 TI001-LOAN-TENURE          PIC X(02).
+           05 FILLER                     PIC X(01).
+           05 TI001-FIXED-INTREST-RATE   PIC 9(02)V9(01).
+           05 FILLER                     PIC X(01).
+           05 TI001-LOAN-INDICATOR       PIC X(05).
+           05 FILLER                     PIC X(01).
+           05 TI001-REPAYMENT-DAY  PIC X(02).
+           05 FILLER                     PIC X(01).
+           05 TI001-TOTAL-REPAYMENT-AMOUNT     PIC 9(09).
+           05 FILLER                     PIC X(01).
+           05 TI001-MONTHLY-REPAYMENT-AMOUNT PIC 9(07)V9(02).
+           05 FILLER                         PIC X(01).
+           05 TI001-NEXT-REPAYMENT-DUE-DATE  PIC X(10).
+           05 FILLER                         PIC X(01).
+           05 TI001-BALANCE-AMOUNT           PIC 9(09)V9(02).
+       WORKING-STORAGE SECTION.
+           EXEC SQL
+                INCLUDE SQLCA
+           END-EXEC.
+           EXEC SQL
+                INCLUDE LOANDCL
+           END-EXEC.
+       01 WS-VARS.
+           05 WS-FST-TI001      PIC 9(02).
+           05 WS-COUNTER        PIC 9(02).
+       PROCEDURE DIVISION.
+       0000-MAIN-PARA.
+           PERFORM 1000-INIT-PARA
+           THRU    1000-INIT-PARA-EXIT
+           PERFORM 3000-PROC-PARA
+           THRU    3000-PROC-PARA-EXIT
+           PERFORM 9000-TERM-PARA
+           THRU    9000-TERM-PARA-EXIT
+           .
+       0000-MAIN-PARA-EXIT.
+           EXIT.
+       1000-INIT-PARA.
+           CONTINUE.
+       1000-INIT-PARA-EXIT.
+           EXIT.
+       3000-PROC-PARA.
+           PERFORM 3100-OPEN-PARA
+           THRU    3100-OPEN-PARA-EXIT
+           PERFORM 3200-READ-PARA
+           THRU    3200-READ-PARA-EXIT
+           UNTIL WS-FST-TI001 = 10
+           PERFORM 3300-CLOSE-PARA
+           THRU    3300-CLOSE-PARA-EXIT
+           .
+       3000-PROC-PARA-EXIT.
+           EXIT.
+       3100-OPEN-PARA.
+           OPEN INPUT TI001-PS
+           EVALUATE TRUE
+           WHEN WS-FST-TI001 = 00
+                DISPLAY 'TI001-PS OPEN SUCESSFULLY'
+           WHEN OTHER
+                DISPLAY 'TI001-PS OPEN FAILED ' WS-FST-TI001
+                PERFORM 9000-TERM-PARA
+                THRU    9000-TERM-PARA-EXIT
+           END-EVALUATE
+           .
+       3100-OPEN-PARA-EXIT.
+           EXIT.
+       3200-READ-PARA.
+           READ  TI001-PS
+           EVALUATE TRUE
+           WHEN WS-FST-TI001 = 00
+                DISPLAY 'TI001-PS READ SUCCESSFULLY'
+                ADD 1 TO WS-COUNTER
+                PERFORM 3210-MOVE-PARA
+                THRU    3210-MOVE-PARA-EXIT
+           WHEN WS-FST-TI001 = 10
+                DISPLAY 'ALL RECORDS ARE PROCESSED' WS-COUNTER
+           WHEN OTHER
+                DISPLAY 'READ FAILED' WS-FST-TI001
+           END-EVALUATE
+           .
+       3200-READ-PARA-EXIT.
+           EXIT.
+       3300-CLOSE-PARA.
+           CLOSE TI001-PS.
+       3300-CLOSE-PARA-EXIT.
+           EXIT.
+       3210-MOVE-PARA.
+           MOVE TI001-APPLICANT-ID TO HV-APPLICANT-ID
+           MOVE TI001-LOAN-ID  TO HV-LOAN-ID
+           MOVE TI001-LOAN-TYPE TO HV-LOAN-TYPE
+           MOVE TI001-APPROVED-LOAN-AMOUNT TO HV-APPROVED-LOAN-AMOUNT
+           MOVE TI001-LOAN-APPROVAL-DATE TO HV-LOAN-APPROVAL-DATE
+           MOVE TI001-LOAN-TENURE TO HV-LOAN-TENURE
+           MOVE TI001-FIXED-INTREST-RATE TO HV-FIXED-INTREST-RATE
+           MOVE TI001-LOAN-INDICATOR TO HV-LOAN-INDICATOR
+           MOVE TI001-REPAYMENT-DAY TO HV-REPAYMENT-DAY
+           MOVE TI001-TOTAL-REPAYMENT-AMOUNT TO
+           HV-TOTAL-REPAYMENT-AMOUNT
+           MOVE TI001-MONTHLY-REPAYMENT-AMOUNT TO
+           HV-MONTHLY-REPAYMENT-AMOUNT
+           MOVE TI001-NEXT-REPAYMENT-DUE-DATE TO
+           HV-NEXT-REPAYMENT-DUE-DATE
+           MOVE TI001-BALANCE-AMOUNT TO HV-BALANCE-AMOUNT
+           EXEC SQL
+                INSERT INTO LOAN_DB VALUES(
+                :HV-APPLICANT-ID,
+                :HV-LOAN-ID,
+                :HV-LOAN-TYPE,
+                :HV-APPROVED-LOAN-AMOUNT,
+                :HV-LOAN-APPROVAL-DATE,
+                :HV-LOAN-TENURE,
+                :HV-FIXED-INTREST-RATE,
+                :HV-LOAN-INDICATOR,
+                :HV-REPAYMENT-DAY,
+                :HV-TOTAL-REPAYMENT-AMOUNT,
+                :HV-MONTHLY-REPAYMENT-AMOUNT,
+                :HV-NEXT-REPAYMENT-DUE-DATE,
+                :HV-BALANCE-AMOUNT
+                )
+           END-EXEC
+           DISPLAY WS-COUNTER " " SQLCODE
+           .
+       3210-MOVE-PARA-EXIT.
+           EXIT.
+       9000-TERM-PARA.
+           STOP RUN.
+       9000-TERM-PARA-EXIT.
+           EXIT.
+

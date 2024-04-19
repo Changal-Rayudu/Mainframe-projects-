@@ -1,0 +1,117 @@
+       IDENTIFICATION DIVISION.                                         00010000
+       PROGRAM-ID. LOADAPP.                                             00020000
+       ENVIRONMENT DIVISION.                                            00030000
+       INPUT-OUTPUT SECTION.                                            00040000
+       FILE-CONTROL.                                                    00050000
+           SELECT TI001-PS ASSIGN TO APPDB                              00060000
+           ORGANIZATION IS SEQUENTIAL                                   00070000
+           ACCESS  IS SEQUENTIAL                                        00080000
+           FILE STATUS IS WS-FST-TI001.                                 00090000
+       DATA DIVISION.                                                   00100000
+       FILE SECTION.                                                    00110000
+       FD TI001-PS                                                      00120000
+           RECORDING MODE IS F                                          00130002
+           RECORD CONTAINS 200 CHARACTERS.                              00140002
+       01 TI001-PS-REC.                                                 00150000
+          05 TI001-APPLICANT-ID PIC X(10).                              00160000
+          05 FILLER             PIC X(01).                              00170000
+          05 TI001-APPLICANT-NAME PIC X(32).                            00180000
+          05 FILLER               PIC X(01).                            00190000
+          05 TI001-DOOR-NO        PIC X(10).                            00200000
+          05 FILLER               PIC X(01).                            00210000
+          05 TI001-STREET         PIC X(20).                            00220000
+          05 FILLER               PIC X(01).                            00230000
+          05 TI001-CITY           PIC X(20).                            00240000
+          05 FILLER               PIC X(01).                            00250000
+          05 TI001-STATE          PIC X(20).                            00260000
+          05 FILLER               PIC X(01).                            00270000
+          05 TI001-PIN            PIC X(01).                            00280000
+          05 FILLER               PIC X(01).                            00290000
+          05 TI001-CELL-PHONE-NO  PIC X(10).                            00300000
+       WORKING-STORAGE SECTION.                                         00310000
+       01 WS-FILE-STATUS-CODE.                                          00320000
+          05 WS-FST-TI001   PIC 9(02).                                  00330000
+             88 C05-TI001-SUCCESS VALUE ZEROES.                         00340000
+             88 C05-TI001-EOF     VALUE 10.                             00350000
+           EXEC SQL INCLUDE SQLCA END-EXEC.                             00351001
+           EXEC SQL INCLUDE APPDCL END-EXEC.                            00352001
+       PROCEDURE DIVISION.                                              00360000
+       0000-MAIN-PARA.                                                  00370000
+           PERFORM 1000-INIT-PARA THRU 1000-INIT-PARA-EXIT.             00380000
+           PERFORM 3000-PROC-PARA THRU 3000-PROC-PARA-EXIT.             00390000
+           PERFORM 9000-TERM-PARA THRU 9000-TERM-PARA-EXIT.             00400000
+       0000-MAIN-PARA-EXIT.                                             00410000
+           EXIT.                                                        00420000
+       1000-INIT-PARA.                                                  00430000
+           DISPLAY 'INITIALIZE'.                                        00440000
+       1000-INIT-PARA-EXIT.                                             00450000
+           EXIT.                                                        00460000
+       3000-PROC-PARA.                                                  00470000
+           PERFORM 3100-OPEN-PARA THRU 3100-OPEN-PARA-EXIT.             00480000
+           PERFORM 3200-READ-PARA THRU 3200-READ-PARA-EXIT              00490000
+           UNTIL C05-TI001-EOF.                                         00500000
+           PERFORM 3300-CLOSE-PARA THRU 3300-CLOSE-PARA-EXIT.           00510000
+       3000-PROC-PARA-EXIT.                                             00520001
+           EXIT.                                                        00530001
+       3100-OPEN-PARA.                                                  00540001
+           OPEN INPUT TI001-PS                                          00550002
+           EVALUATE TRUE                                                00560002
+           WHEN C05-TI001-SUCCESS                                       00570002
+                DISPLAY 'FILE OPENED SUCCESSFULLY'                      00580002
+           WHEN OTHER                                                   00590002
+                DISPLAY 'TI001 OPEN FAILED ' WS-FST-TI001               00600002
+           END-EVALUATE                                                 00610002
+           .                                                            00611002
+       3100-OPEN-PARA-EXIT.                                             00620001
+           EXIT.                                                        00630001
+       3200-READ-PARA.                                                  00640001
+           READ TI001-PS                                                00650002
+           EVALUATE TRUE                                                00660002
+           WHEN C05-TI001-SUCCESS                                       00670002
+                DISPLAY 'TI001 READ SUCESSFULLY'                        00680002
+                PERFORM 3210-MOVE-PARA THRU 3210-MOVE-PARA-EXIT         00690002
+           WHEN C05-TI001-EOF                                           00700002
+                DISPLAY 'TI001-PS ALL RECORDS PROCESSED'                00710002
+           WHEN OTHER                                                   00720002
+                DISPLAY 'TI001-PS READ FAILED ' WS-FST-TI001            00730002
+           END-EVALUATE                                                 00740002
+           .                                                            00741002
+       3200-READ-PARA-EXIT.                                             00750001
+           EXIT.                                                        00760001
+       3210-MOVE-PARA.                                                  00770001
+           MOVE TI001-APPLICANT-ID TO HV-APPLICANT-ID.                  00780001
+           MOVE TI001-APPLICANT-NAME TO HV-APPLICANT-NAME-TEXT.         00790001
+           MOVE LENGTH OF HV-APPLICANT-NAME-TEXT TO                     00800001
+           HV-APPLICANT-NAME-LEN.                                       00810001
+           MOVE TI001-DOOR-NO TO HV-DOOR-NO.                            00820001
+           MOVE TI001-STREET TO HV-STREET.                              00830002
+           MOVE TI001-CITY TO HV-CITY.                                  00840001
+           MOVE TI001-STATE TO HV-STATE.                                00850001
+           MOVE TI001-PIN TO HV-PIN.                                    00860001
+           MOVE TI001-CELL-PHONE-NO TO HV-CELL-PHONE-NO.                00870001
+           PERFORM 3220-INSERT-PARA THRU 3220-INSERT-PARA-EXIT.         00880001
+       3210-MOVE-PARA-EXIT.                                             00890001
+           EXIT.                                                        00900001
+       3220-INSERT-PARA.                                                00910001
+           EXEC SQL INSERT INTO APPLICANT_DB VALUES(                    00920001
+            :HV-APPLICANT-ID,                                           00930001
+            :HV-APPLICANT-NAME,                                         00940001
+            :HV-DOOR-NO,                                                00950001
+            :HV-STREET,                                                 00960001
+            :HV-CITY,                                                   00970001
+            :HV-STATE,                                                  00980001
+            :HV-PIN,                                                    00990001
+            :HV-CELL-PHONE-NO                                           01000002
+            )                                                           01010001
+           END-EXEC.                                                    01020001
+       3220-INSERT-PARA-EXIT.                                           01030001
+           EXIT.                                                        01040001
+       3300-CLOSE-PARA.                                                 01050001
+           CLOSE TI001-PS.                                              01060001
+       3300-CLOSE-PARA-EXIT.                                            01070001
+           EXIT.                                                        01080001
+       9000-TERM-PARA.                                                  01090001
+           STOP RUN.                                                    01100001
+       9000-TERM-PARA-EXIT.                                             01110001
+           EXIT.                                                        01120001
+

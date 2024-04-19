@@ -1,0 +1,29 @@
+//*This is the second file in the sequence
+//TECN121A JOB NOTIFY=&SYSUID                                           00010000
+//STEP01   EXEC PGM=IDCAMS                                              00020000
+//SYSPRINT DD SYSOUT=*                                                  00030000
+//SYSOUT   DD SYSOUT=*                                                  00040000
+//SYSIN    DD *                                                         00050000
+  DEFINE GDG(NAME(TECN121.FINAL.BACKUP.GDG) -                           00060001
+             LIMIT(15) -                                                00070000
+             NOEMPTY -                                                  00080000
+             NOSCRATCH)                                                 00090000
+/*                                                                      00100000
+//STEP02   EXEC PGM=IDCAMS                                              00110000
+//SYSPRINT DD SYSOUT=*                                                  00120000
+//SYSOUT   DD SYSOUT=*                                                  00130000
+//SYSIN    DD *                                                         00140000
+  DEFINE GDG(NAME(TECN121.FINAL.BACKUP.MAXRET.GDG) -                    00150001
+             LIMIT(10) -                                                00160000
+             NOSCRATCH -                                                00170000
+             NOEMPTY)                                                   00180000
+  DEFINE GDG(NAME(TECN121.FINAL.BACKUP.GENUINE.GDG)-                    00181001
+             LIMIT(10) -                                                00182001
+             NOSCRATCH -                                                00183001
+             NOEMPTY)                                                   00184001
+  DEFINE GDG(NAME(TECN121.FINAL.BACKUP.HIGHSPD.GDG)-                    00185001
+             LIMIT(10) -                                                00186001
+             NOSCRATCH -                                                00187001
+             NOEMPTY)                                                   00188001
+/*                                                                      00190000
+

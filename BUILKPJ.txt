@@ -1,0 +1,19 @@
+//*This is the fifth file in sequence
+//TECN121A JOB NOTIFY=&SYSUID                                           00010000
+//STEP10   EXEC PGM=IEFBR14                                             00011001
+//DD1      DD DSN=TECN121.FINAL.BULK.PAYMENT.PS,                        00012001
+//         DISP=(MOD,DELETE,DELETE),                                    00013001
+//         SPACE=(TRK,(1,1))                                            00014001
+//STEP01   EXEC PGM=SORT                                                00020000
+//SORTIN   DD DSN=TECN121.FINAL.PAYMENT.DETAIL.PS,DISP=SHR              00030001
+//SORTOUT  DD DSN=TECN121.FINAL.BULK.PAYMENT.PS,                        00040001
+//         DISP=(NEW,CATLG,DELETE),                                     00050000
+//         SPACE=(TRK,(5,5)),                                           00060000
+//         DCB=(LRECL=80,RECFM=FB,BLKSIZE=800,DSORG=PS)                 00070000
+//SYSPRINT DD SYSOUT=*                                                  00080000
+//SYSOUT   DD SYSOUT=*                                                  00090000
+//SYSIN    DD *                                                         00100000
+  SORT FIELDS=(12,10,CH,A,23,2,CH,A,26,9,ZD,A)                          00110001
+  INCLUDE COND=(26,9,ZD,GT,001000000)                                   00120002
+/*                                                                      00130000
+

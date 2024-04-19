@@ -1,0 +1,320 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DBREPORT.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+      *REPORT PS DECLARATION
+       FILE-CONTROL.
+           SELECT TO001-PS ASSIGN TO INPS
+                  ORGANIZATION IS SEQUENTIAL
+                  ACCESS IS SEQUENTIAL
+                  FILE STATUS IS WS-FST-TO001.
+       DATA DIVISION.
+       FILE SECTION.
+      *RECORD LAYOUT
+       FD TO001-PS.
+       01 TO001-PS-REC       PIC X(80).
+       WORKING-STORAGE SECTION.
+       01 WS-VARS.
+           05 WS-ERR-MSG.
+               10 WS-ERR-LEN       PIC S9(4) USAGE COMP VALUE 800.
+               10 WS-ERR-TEXT      PIC X(80) OCCURS 10 TIMES.
+           05 WS-LRECL             PIC S9(9) USAGE COMP VALUE 80.
+           05 WS-FST-TO001         PIC 9(02).
+           05 WS-LINE-COUNTER      PIC 9(02) VALUE 1.
+           05 WS-PAGE-COUNTER      PIC 9(02) VALUE 1.
+           05 WS-APPLICANT-ID      PIC X(10).
+           EXEC SQL
+               INCLUDE SQLCA
+           END-EXEC.
+           EXEC SQL
+               INCLUDE APPDCL
+           END-EXEC.
+           EXEC SQL
+               INCLUDE PAYDCL
+           END-EXEC.
+           EXEC SQL
+               DECLARE CURS01 CURSOR
+               FOR
+               SELECT PAYMENT_DB.APPLICANT_ID,
+                      APPLICANT_NAME,
+                      COLLECTION,
+                      LOAN_ID
+                      FROM PAYMENT_DB JOIN APPLICANT_DB
+                      ON PAYMENT_DB.APPLICANT_ID =
+                      APPLICANT_DB.APPLICANT_ID
+                      WHERE COLLECTION = 'HIGHSPEED'
+           END-EXEC.
+      * PAYMENT DETAILS REPORT HEADER
+       01 WS-LAYOUTS.
+           05 WS-P1H1.
+               10 FILLER       PIC X(25).
+               10 WS-NAME      PIC X(22) VALUE 'PAYMENT DETAILS REPORT'.
+               10 FILLER       PIC X(34).
+      * DATE & PAGE HEADER
+           05 WS-P1H2.
+               10 WS-D11       PIC X(06) VALUE 'DATE :'.
+               10 FILLER       PIC X(01).
+               10 WS-D12       PIC X(10) VALUE SPACES.
+               10 FILLER       PIC X(39).
+               10 WS-P11       PIC X(06) VALUE 'PAGE :'.
+               10 FILLER       PIC X(01).
+               10 WS-P12       PIC 9(02).
+               10 FILLER       PIC X(15).
+      * TIME & REPORT-ID HEADER
+           05 WS-P1H3.
+               10 WS-T11       PIC X(06) VALUE 'TIME :'.
+               10 FILLER       PIC X(01).
+               10 WS-T12       PIC X(08).
+               10 FILLER       PIC X(41).
+               10 WS-R11       PIC X(11) VALUE 'REPORT ID :'.
+               10 FILLER       PIC X(01).
+               10 WS-R12       PIC X(04) VALUE '1002'.
+               10 FILLER       PIC X(09).
+      * COLUMN HEADINGS
+           05 WS-P1H4.
+               10 WS-APPID     PIC X(12) VALUE 'APPLICANT ID'.
+               10 FILLER       PIC X(02).
+               10 WS-NAME      PIC X(04) VALUE 'NAME'.
+               10 FILLER       PIC X(32).
+               10 WS-COLL      PIC X(10) VALUE 'COLLECTION'.
+               10 FILLER       PIC X(04).
+               10 WS-LOANID    PIC X(07) VALUE 'LOAN ID'.
+               10 FILLER       PIC X(09).
+      * HYPHENS BELOW COLUMN HEADERS
+           05 WS-P1H5.
+               10 WS-DASH1     PIC X(12) VALUE '------------'.
+               10 FILLER       PIC X(02).
+               10 WS-DASH2     PIC X(04) VALUE '----'.
+               10 FILLER       PIC X(32).
+               10 WS-DASH3     PIC X(10) VALUE '----------'.
+               10 FILLER       PIC X(04).
+               10 WS-DASH4     PIC X(07) VALUE '-------'.
+               10 FILLER       PIC X(09).
+      * VARIABLES FOR RECORDS
+           05 WS-P1H6.
+               10 WS-APPID2    PIC X(10).
+               10 FILLER       PIC X(04).
+               10 WS-NAME2     PIC X(32).
+               10 FILLER       PIC X(04).
+               10 WS-COLL2     PIC X(10).
+               10 FILLER       PIC X(04).
+               10 WS-LOANID2   PIC X(02).
+               10 FILLER       PIC X(14).
+      * END OF PAGE DECLARATION
+           05 WS-EOP.
+               10 WS-EOPDASH1  PIC X(30) VALUE ALL '-'.
+               10 WS-EOPP      PIC X(11) VALUE 'END OF PAGE'.
+               10 WS-EOPDASH2  PIC X(31) VALUE ALL '-'.
+               10 FILLER       PIC X(08).
+      * PAGE HEADER 2
+           05 WS-P2H1.
+               10 FILLER       PIC X(56).
+               10 WS-P21       PIC X(06) VALUE 'PAGE :'.
+               10 FILLER       PIC X(01).
+               10 WS-P22       PIC 9(02).
+               10 FILLER       PIC X(15).
+      * REPORT ID HEADER 2
+           05 WS-P2H2.
+               10 FILLER       PIC X(56).
+               10 WS-R21       PIC X(11) VALUE 'REPORT ID :'.
+               10 FILLER       PIC X(01).
+               10 WS-R22       PIC X(04) VALUE '1002'.
+               10 FILLER       PIC X(08).
+      * END OF REPORT TRAILER
+           05 WS-EOR.
+               10 WS-STAR      PIC X(29) VALUE ALL '*'.
+               10 WS-EORR      PIC X(13) VALUE 'END OF REPORT'.
+               10 WS-STAR2     PIC X(30) VALUE ALL '*'.
+               10 FILLER       PIC X(08).
+       PROCEDURE DIVISION.
+       0000-MAIN-PARA.
+           PERFORM 1000-INITIALIZE-PARA
+              THRU 1000-INITIALIZE-PARA-EXIT
+           PERFORM 3000-PROCESS-PARA
+              THRU 3000-PROCESS-PARA-EXIT
+           PERFORM 9000-TERMINATION-PARA
+              THRU 9000-TERMINATION-PARA-EXIT
+           .
+       0000-MAIN-PARA-EXIT.
+           EXIT
+           .
+       1000-INITIALIZE-PARA.
+      * MOVING VALUES TO DATE AND TIME
+           MOVE FUNCTION CURRENT-DATE(1:4) TO WS-D12(7:4)
+           MOVE '-' TO WS-D12(6:1)
+           MOVE FUNCTION CURRENT-DATE(5:2) TO WS-D12(4:2)
+           MOVE '-' TO WS-D12(3:1)
+           MOVE FUNCTION CURRENT-DATE(7:2) TO WS-D12(1:2)
+           MOVE FUNCTION CURRENT-DATE(9:2) TO WS-T12(1:2)
+           MOVE ':' TO WS-T12(3:1)
+           MOVE FUNCTION CURRENT-DATE(11:2) TO WS-T12(4:2)
+           MOVE ':' TO WS-T12(6:1)
+           MOVE FUNCTION CURRENT-DATE(13:2) TO WS-T12(7:2)
+           .
+       1000-INITIALIZE-PARA-EXIT.
+           EXIT
+           .
+       3000-PROCESS-PARA.
+           PERFORM 3100-OPEN-PARA
+              THRU 3100-OPEN-PARA-EXIT
+           PERFORM 3200-REPORT-HEADER-PARA
+              THRU 3200-REPORT-HEADER-PARA-EXIT
+           PERFORM 3300-FETCH-PARA
+              THRU 3300-FETCH-PARA-EXIT
+             UNTIL SQLCODE = 100
+           PERFORM 3400-FOOTER-PARA
+              THRU 3400-FOOTER-PARA-EXIT
+           PERFORM 3500-CLOSE-PARA
+              THRU 3500-CLOSE-PARA-EXIT
+           .
+       3000-PROCESS-PARA-EXIT.
+           EXIT
+           .
+       9000-TERMINATION-PARA.
+           CONTINUE
+           .
+       9000-TERMINATION-PARA-EXIT.
+           STOP RUN
+           .
+       3100-OPEN-PARA.
+           OPEN OUTPUT TO001-PS
+           EVALUATE TRUE
+           WHEN WS-FST-TO001 = 00
+           CONTINUE
+           WHEN OTHER
+           PERFORM 9000-TERMINATION-PARA
+              THRU 9000-TERMINATION-PARA-EXIT
+           END-EVALUATE
+           EXEC SQL
+               OPEN CURS01
+           END-EXEC
+           EVALUATE TRUE
+           WHEN SQLCODE = 0
+           CONTINUE
+           WHEN OTHER
+           CALL 'DSNTIAR' USING SQLCA WS-ERR-MSG WS-LRECL
+           DISPLAY WS-ERR-MSG
+           END-EVALUATE
+           .
+       3100-OPEN-PARA-EXIT.
+           EXIT
+           .
+       3200-REPORT-HEADER-PARA.
+      * WRITING HEADER IN PAGE 1
+           MOVE WS-P1H1 TO TO001-PS-REC
+           WRITE TO001-PS-REC
+           MOVE WS-PAGE-COUNTER TO WS-P12
+           MOVE WS-P1H2 TO TO001-PS-REC
+           WRITE TO001-PS-REC
+           MOVE WS-P1H3 TO TO001-PS-REC
+           WRITE TO001-PS-REC
+           MOVE SPACES TO TO001-PS-REC
+           WRITE TO001-PS-REC
+           .
+       3200-REPORT-HEADER-PARA-EXIT.
+           EXIT
+           .
+       3300-FETCH-PARA.
+           EVALUATE TRUE
+      * WRITING RECORDS (LINES = 8)
+           WHEN WS-PAGE-COUNTER = 1
+                IF WS-LINE-COUNTER = 1
+                   MOVE WS-P1H4 TO TO001-PS-REC
+                   WRITE TO001-PS-REC
+                   ADD 1 TO WS-LINE-COUNTER
+                ELSE IF WS-LINE-COUNTER = 2
+                        MOVE WS-P1H5 TO TO001-PS-REC
+                        WRITE TO001-PS-REC
+                        ADD 1 TO WS-LINE-COUNTER
+                ELSE IF WS-LINE-COUNTER > 2 AND WS-LINE-COUNTER < 8
+                        EXEC SQL
+                        FETCH CURS01 INTO :WS-APPLICANT-ID,
+                                          :HV-APPLICANT-NAME,
+                                          :HV-COLLECTION,
+                                          :HV-LOAN-ID
+                        END-EXEC
+                        IF SQLCODE = 0
+                           MOVE WS-APPLICANT-ID TO WS-APPID2
+                           MOVE HV-APPLICANT-NAME-TEXT TO WS-NAME2
+                           MOVE HV-COLLECTION TO WS-COLL2
+                           MOVE HV-LOAN-ID TO WS-LOANID2
+                           MOVE WS-P1H6 TO TO001-PS-REC
+                           WRITE TO001-PS-REC
+                           ADD 1 TO WS-LINE-COUNTER
+                        END-IF
+                ELSE IF WS-LINE-COUNTER >= 8
+                        MOVE WS-EOP TO TO001-PS-REC
+                        WRITE TO001-PS-REC
+                        ADD 1 TO WS-PAGE-COUNTER
+                        MOVE 1 TO WS-LINE-COUNTER
+                 END-IF
+                 END-IF
+                 END-IF
+                 END-IF
+           WHEN WS-PAGE-COUNTER > 1
+      * WRITING RECORDS IN NEXT PAGES
+                IF WS-LINE-COUNTER = 1
+                   MOVE WS-PAGE-COUNTER TO WS-P22
+                   MOVE WS-P2H1 TO TO001-PS-REC
+                   WRITE TO001-PS-REC
+                   MOVE WS-P2H2 TO TO001-PS-REC
+                   WRITE TO001-PS-REC
+                   MOVE WS-P1H4 TO TO001-PS-REC
+                   WRITE TO001-PS-REC
+                   ADD 1 TO WS-LINE-COUNTER
+           ELSE IF WS-LINE-COUNTER = 2
+                   MOVE WS-P1H5 TO TO001-PS-REC
+                   WRITE TO001-PS-REC
+                   ADD 1 TO WS-LINE-COUNTER
+           ELSE IF WS-LINE-COUNTER > 2 AND WS-LINE-COUNTER < 8
+                   EXEC SQL
+                       FETCH CURS01 INTO :WS-APPLICANT-ID,
+                                         :HV-APPLICANT-NAME,
+                                         :HV-COLLECTION,
+                                         :HV-LOAN-ID
+                   END-EXEC
+                   IF SQLCODE = 0
+                      MOVE WS-APPLICANT-ID TO WS-APPID2
+                      MOVE HV-APPLICANT-NAME-TEXT TO WS-NAME2
+                      MOVE HV-COLLECTION TO WS-COLL2
+                      MOVE HV-LOAN-ID TO WS-LOANID2
+                      MOVE WS-P1H6 TO TO001-PS-REC
+                      WRITE TO001-PS-REC
+                      ADD 1 TO WS-LINE-COUNTER
+                   END-IF
+           ELSE IF WS-LINE-COUNTER >= 8
+                   MOVE WS-EOP TO TO001-PS-REC
+                   WRITE TO001-PS-REC
+                   ADD 1 TO WS-PAGE-COUNTER
+                   MOVE 1 TO WS-LINE-COUNTER
+            END-IF
+            END-IF
+            END-IF
+            END-IF
+           END-EVALUATE
+           .
+       3300-FETCH-PARA-EXIT.
+           EXIT
+           .
+       3400-FOOTER-PARA.
+      * FOOTER / TRAILER PARA
+           IF WS-LINE-COUNTER < 8
+              MOVE WS-EOP TO TO001-PS-REC
+              WRITE TO001-PS-REC
+           END-IF
+           MOVE WS-EOR TO TO001-PS-REC
+           WRITE TO001-PS-REC
+           .
+       3400-FOOTER-PARA-EXIT.
+           EXIT
+           .
+       3500-CLOSE-PARA.
+           EXEC SQL
+               CLOSE CURS01
+           END-EXEC
+           CLOSE TO001-PS
+           .
+       3500-CLOSE-PARA-EXIT.
+           EXIT
+           .
+
